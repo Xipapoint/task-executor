@@ -1,0 +1,17 @@
+{
+  "name": "message-system-e2e",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "implicitDependencies": ["message-system"],
+  "targets": {
+    "e2e": {
+      "executor": "@nx/jest:jest",
+      "outputs": ["{workspaceRoot}/coverage/{e2eProjectRoot}"],
+      "options": {
+        "jestConfig": "apps/message-system-e2e/jest.config.ts",
+        "passWithNoTests": true
+      },
+      "dependsOn": ["message-system:build", "message-system:serve"]
+    }
+  }
+}
