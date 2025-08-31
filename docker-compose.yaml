@@ -1,0 +1,64 @@
+version: '3.9'
+
+services:
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command: ["redis-server", "--appendonly", "yes"]
+
+  redisinsight:
+    image: redis/redisinsight:latest
+    container_name: redisinsight
+    ports:
+      - "8001:5540"
+    depends_on:
+      - redis
+
+  postgres:
+    image: postgres:15-alpine
+    container_name: postgres
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: "arsenii"
+      POSTGRES_PASSWORD: "test1234"
+      POSTGRES_DB: "taxi_db"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+
+  pgadmin:
+    image: dpage/pgadmin4:8
+    container_name: pgadmin
+    ports:
+      - "5050:80"  # http://localhost:5050
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@local.com
+      PGADMIN_DEFAULT_PASSWORD: admin123
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    depends_on:
+      - postgres
+
+  # migration:
+  #   build:
+  #     context: .
+  #     dockerfile: ./apps/user/Dockerfile.ts
+  #   container_name: migration
+  #   depends_on:
+  #     - postgres
+  #   environment:
+  #     DB_HOST: postgres
+  #     DB_PORT: 5432
+  #     DB_USERNAME: arsenii
+  #     DB_PASSWORD: test1234
+  #     DB_NAME: taxi_db
+  #   command: npm run migration:run
+
+volumes:
+  redis-data:
+  postgres-data:
+  pgadmin-data:

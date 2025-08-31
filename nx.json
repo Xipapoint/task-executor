@@ -38,7 +38,15 @@
       "options": {
         "targetName": "test"
       },
-      "exclude": ["apps/message-system-e2e/**/*"]
+      "exclude": [
+        "apps/message-system-e2e/**/*",
+        "tasks-e2e/**/*",
+        "tasks-e2e/**/*",
+        "apps/tasks-e2e/**/*",
+        "apps/messager-e2e/**/*",
+        "apps/executor-e2e/**/*",
+        "apps/user-e2e/**/*"
+      ]
     }
   ]
 }
