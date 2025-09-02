@@ -1,13 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConsumerHandler, KafkaMessage } from '../interfaces/kafka-consumer.interface';
 import { KafkaPendingRequestsService } from '../pending-requests/kafka-pending-requests.service';
 import { TaskResponseContract } from '../../contracts';
+import { QueueInjectionTokens } from '../../constants/injection-tokens';
 
 @Injectable()
 export class ReplyTopicHandler implements ConsumerHandler {
   private readonly logger = new Logger(ReplyTopicHandler.name);
 
   constructor(
+    @Inject(QueueInjectionTokens.KAFKA_PENDING_REQUESTS_SERVICE)
     private readonly pendingRequestsService: KafkaPendingRequestsService
   ) {}
 

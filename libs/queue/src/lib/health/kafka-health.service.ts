@@ -1,8 +1,9 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { KafkaOrchestrator } from '../kafka/kafka-orchestrator.service';
 import { SSENotificationService } from '../sse/sse-notification.service';
 import { RedisClient } from '@message-system/cache';
+import { QueueInjectionTokens } from '../constants/injection-tokens';
 
 @Injectable()
 export class KafkaHealthService {
@@ -11,7 +12,9 @@ export class KafkaHealthService {
   private readonly METRICS_KEY = 'kafka:metrics';
   
   constructor(
+    @Inject(QueueInjectionTokens.KAFKA_ORCHESTRATOR)
     private readonly kafkaOrchestrator: KafkaOrchestrator,
+    @Inject(QueueInjectionTokens.SSE_NOTIFICATION_SERVICE)
     private readonly sseService: SSENotificationService,
     private readonly redisClient: RedisClient
   ) {}

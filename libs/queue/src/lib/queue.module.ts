@@ -6,6 +6,8 @@ import { CacheModule } from '@message-system/cache';
 // Kafka services
 import { KafkaOrchestrator } from './kafka/kafka-orchestrator.service';
 import { KafkaPendingRequestsService } from './kafka/pending-requests/kafka-pending-requests.service';
+import { KafkaConsumerService } from './kafka/consumer/kafka-consumer.service';
+import { KafkaProducerService } from './kafka/producer/kafka-producer.service';
 import { SSENotificationService } from './sse/sse-notification.service';
 
 // Health and monitoring
@@ -14,9 +16,15 @@ import { KafkaHealthService } from './health/kafka-health.service';
 // Controllers
 import { KafkaMessagingController } from './controllers/kafka-messaging.controller';
 import { KafkaHealthController } from './controllers/kafka-health.controller';
+import { KafkaConsumerRegistry } from './kafka/consumer/kafka-consumer-registry';
 
-// Legacy services
-import { TaskProducerService } from './task.producer.';
+// Handlers
+import { ReplyTopicHandler } from './kafka/handlers/reply-topic.handler';
+import { TaskNotificationHandler } from './kafka/handlers/task-notification.handler';
+
+// Injection tokens
+import { QueueInjectionTokens } from './constants/injection-tokens';
+
 
 @Global()
 @Module({
@@ -30,26 +38,61 @@ import { TaskProducerService } from './task.producer.';
     KafkaHealthController,
   ],
   providers: [
-    // New Kafka infrastructure
-    KafkaOrchestrator,
-    KafkaPendingRequestsService,
-    SSENotificationService,
+    // Kafka infrastructure services
+    {
+      provide: QueueInjectionTokens.KAFKA_ORCHESTRATOR,
+      useClass: KafkaOrchestrator,
+    },
+    {
+      provide: QueueInjectionTokens.KAFKA_PENDING_REQUESTS_SERVICE,
+      useClass: KafkaPendingRequestsService,
+    },
+    {
+      provide: QueueInjectionTokens.KAFKA_CONSUMER_SERVICE,
+      useClass: KafkaConsumerService,
+    },
+    {
+      provide: QueueInjectionTokens.KAFKA_PRODUCER_SERVICE,
+      useClass: KafkaProducerService,
+    },
+    {
+      provide: QueueInjectionTokens.KAFKA_CONSUMER_REGISTRY,
+      useClass: KafkaConsumerRegistry,
+    },
+    
+    // SSE services
+    {
+      provide: QueueInjectionTokens.SSE_NOTIFICATION_SERVICE,
+      useClass: SSENotificationService,
+    },
+    
+    // Handlers
+    {
+      provide: QueueInjectionTokens.REPLY_TOPIC_HANDLER,
+      useClass: ReplyTopicHandler,
+    },
+    {
+      provide: QueueInjectionTokens.TASK_NOTIFICATION_HANDLER,
+      useClass: TaskNotificationHandler,
+    },
     
     // Health and monitoring
-    KafkaHealthService,
+    {
+      provide: QueueInjectionTokens.KAFKA_HEALTH_SERVICE,
+      useClass: KafkaHealthService,
+    },
     
-    // Legacy producer service (for backward compatibility)
-    TaskProducerService,
   ],
   exports: [
-    // Export new services
-    KafkaOrchestrator,
-    KafkaPendingRequestsService,
-    SSENotificationService,
-    KafkaHealthService,
+    // Export services via injection tokens
+    QueueInjectionTokens.KAFKA_ORCHESTRATOR,
+    QueueInjectionTokens.KAFKA_PENDING_REQUESTS_SERVICE,
+    QueueInjectionTokens.KAFKA_CONSUMER_SERVICE,
+    QueueInjectionTokens.KAFKA_PRODUCER_SERVICE,
+    QueueInjectionTokens.SSE_NOTIFICATION_SERVICE,
+    QueueInjectionTokens.KAFKA_HEALTH_SERVICE,
+    QueueInjectionTokens.KAFKA_CONSUMER_REGISTRY,
     
-    // Export legacy service for compatibility
-    TaskProducerService,
   ],
 })
 export class QueueModule {}

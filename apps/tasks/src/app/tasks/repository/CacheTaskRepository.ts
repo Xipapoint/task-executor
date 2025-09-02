@@ -2,7 +2,7 @@ import { RedisClient } from '@message-system/cache';
 import { TaskFactory } from '../factories/task.factory';
 import { OnModuleInit, Injectable } from '@nestjs/common';
 import { CacheTask } from '../interfaces/cache-task/cache-task';
-import { getCacheTaskKey } from '../constants/cache-task-pattern/cache-task-pattern';
+import { CACHE_TASK_PATTERN, getCacheTaskKey } from '../constants/cache-task-pattern/cache-task-pattern';
 
 @Injectable()
 export class CacheTaskRepository implements OnModuleInit {

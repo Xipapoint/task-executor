@@ -3,6 +3,7 @@ export enum KafkaTopics {
   PURCHASED = 'PURCHASED',
   MESSAGE_SENT = 'MESSAGE_SENT',
   ALERT_TRIGGERED = 'ALERT_TRIGGERED',
+  REPLY_TOPIC = 'REPLY_TOPIC',
 }
 
 export enum KafkaGroups {

@@ -1,31 +1,9 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { KafkaConfig, Producer, Kafka } from 'kafkajs';
+import { ConfigService } from '@nestjs/config';
+import { Kafka, Producer } from 'kafkajs';
+import { getKafkaProducerConfig } from '../utils/get-kafka-producer-config/get-kafka-producer-config';
 
-export interface KafkaProducerConfig {
-  clientId: string;
-  brokers: string[];
-  maxInFlightRequests?: number;
-  retry?: {
-    retries: number;
-    initialRetryTime: number;
-    multiplier: number;
-    maxRetryTime: number;
-  };
-  ssl?: boolean;
-  sasl?: {
-    mechanism: 'plain';
-    username: string;
-    password: string;
-  } | {
-    mechanism: 'scram-sha-256';
-    username: string;
-    password: string;
-  } | {
-    mechanism: 'scram-sha-512';
-    username: string;
-    password: string;
-  };
-}
+
 
 @Injectable()
 export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
@@ -34,29 +12,12 @@ export class KafkaProducerService implements OnModuleInit, OnModuleDestroy {
   private producer: Producer;
   private isConnected = false;
 
-  constructor(private readonly config: KafkaProducerConfig) {
-    const kafkaConfig: KafkaConfig = {
-      clientId: this.config.clientId,
-      brokers: this.config.brokers,
-      retry: this.config.retry || {
-        retries: 5,
-        initialRetryTime: 300,
-        multiplier: 2,
-        maxRetryTime: 30000,
-      },
-    };
-
-    if (this.config.ssl) {
-      kafkaConfig.ssl = this.config.ssl;
-    }
-
-    if (this.config.sasl) {
-      kafkaConfig.sasl = this.config.sasl;
-    }
+  constructor(private readonly configService: ConfigService) {
+    const kafkaConfig = getKafkaProducerConfig(configService);
 
     this.kafka = new Kafka(kafkaConfig);
     this.producer = this.kafka.producer({
-      maxInFlightRequests: this.config.maxInFlightRequests || 5,
+      maxInFlightRequests: kafkaConfig.maxInFlightRequests || 5,
     });
   }
 

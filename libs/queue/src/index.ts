@@ -25,6 +25,9 @@ export * from './lib/controllers/kafka-health.controller';
 // Export constants
 export * from './lib/constants';
 
+// Export injection tokens
+export { QueueInjectionTokens } from './lib/constants/injection-tokens';
+
 // Export contracts (existing)
 export * from './lib/contracts';
 

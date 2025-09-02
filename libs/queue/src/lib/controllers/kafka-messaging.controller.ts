@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, Res, Req, Sse, Logger } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Res, Req, Sse, Logger, Inject } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { Observable } from 'rxjs';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
@@ -6,6 +6,7 @@ import { KafkaOrchestrator } from '../kafka/kafka-orchestrator.service';
 import { SSENotificationService, SSEMessage } from '../sse/sse-notification.service';
 import { randomUUID } from 'crypto';
 import { KafkaTopics } from '../constants';
+import { QueueInjectionTokens } from '../constants/injection-tokens';
 
 @ApiTags('kafka-messaging')
 @Controller('kafka')
@@ -13,7 +14,9 @@ export class KafkaMessagingController {
   private readonly logger = new Logger(KafkaMessagingController.name);
 
   constructor(
+    @Inject(QueueInjectionTokens.KAFKA_ORCHESTRATOR)
     private readonly kafkaOrchestrator: KafkaOrchestrator,
+    @Inject(QueueInjectionTokens.SSE_NOTIFICATION_SERVICE)
     private readonly sseService: SSENotificationService
   ) {}
 

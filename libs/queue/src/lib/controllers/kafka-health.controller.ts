@@ -1,14 +1,18 @@
-import { Controller, Get, Query, Logger } from '@nestjs/common';
+import { Controller, Get, Query, Logger, Inject } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse, ApiQuery } from '@nestjs/swagger';
 import { KafkaHealthService } from '../health/kafka-health.service';
 import { MetricData, TrendData } from '../interfaces/metrics.interface';
+import { QueueInjectionTokens } from '../constants/injection-tokens';
 
 @ApiTags('kafka-health')
 @Controller('kafka/health')
 export class KafkaHealthController {
   private readonly logger = new Logger(KafkaHealthController.name);
 
-  constructor(private readonly healthService: KafkaHealthService) {}
+  constructor(
+    @Inject(QueueInjectionTokens.KAFKA_HEALTH_SERVICE)
+    private readonly healthService: KafkaHealthService
+  ) {}
 
   @Get()
   @ApiOperation({ summary: 'Get Kafka system health status' })

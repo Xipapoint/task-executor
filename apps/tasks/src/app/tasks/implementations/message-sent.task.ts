@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AbstractTask, TaskPayload } from '../abstracts/abstract.task';
+import axios from 'axios';
+import { KafkaTopics } from '@message-system/queue';
 
 export interface MessageSentPayload extends TaskPayload {
   messageId: string;
@@ -26,12 +28,14 @@ export class MessageSentTask extends AbstractTask {
       sentTime: payload.sentTime
     });
 
-    // Implement message sent specific logic here
-    // For example: update delivery status, trigger push notifications, log analytics, etc.
-    
-    // Simulate some processing time
-    await new Promise(resolve => setTimeout(resolve, 150));
-    
+    const result = axios.post(`https://localhost/api/kafka/send/${KafkaTopics.MESSAGE_SENT}`, {
+      messageId: payload.messageId,
+      status: 'sent',
+      sentTime: payload.sentTime
+    });
+
+    console.log(result);
+
     console.log(`Message sent task completed for message ${payload.messageId}`);
   }
 }

@@ -1,13 +1,15 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConsumerHandler, KafkaMessage } from '../interfaces/kafka-consumer.interface';
 import { SSENotificationService, SSEMessage } from '../../sse/sse-notification.service';
 import { KafkaTopics } from '../../constants/kafka.constants';
+import { QueueInjectionTokens } from '../../constants/injection-tokens';
 
 @Injectable()
 export class TaskNotificationHandler implements ConsumerHandler {
   private readonly logger = new Logger(TaskNotificationHandler.name);
 
   constructor(
+    @Inject(QueueInjectionTokens.SSE_NOTIFICATION_SERVICE)
     private readonly sseService: SSENotificationService
   ) {}
 

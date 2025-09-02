@@ -1,6 +1,5 @@
-import { BaseTaskContract } from "../base-task.contract";
-
-export interface TaskContractWithStartTime extends BaseTaskContract {
+import { TaskContractWithStartTime } from '../task/task.contract';
+export interface MessageTaskContract extends TaskContractWithStartTime {
     /**
      * Start time is the metric when the user requested and the message was sent with the producer.
      * In seconds.

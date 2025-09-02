@@ -1,6 +1,12 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
-import { Consumer, Kafka, KafkaConfig } from 'kafkajs';
-import { KafkaConsumerConfig, KafkaMessage, ConsumerHandler } from '../interfaces/kafka-consumer.interface';
+import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Inject } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { Consumer, Kafka } from 'kafkajs';
+import { ConsumerHandler, KafkaConsumerConfig, KafkaMessage } from '../interfaces';
+import { getKafkaConsumerConfig } from '../utils';
+import { ReplyTopicHandler } from '../handlers/reply-topic.handler';
+import { KafkaTopics } from '../../constants';
+import { KafkaConsumerRegistry } from './kafka-consumer-registry';
+import { QueueInjectionTokens } from '../../constants/injection-tokens';
 
 @Injectable()
 export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
@@ -9,20 +15,19 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
   private consumer: Consumer;
   private isConnected = false;
   private handlers = new Map<string, ConsumerHandler>();
+  private config: KafkaConsumerConfig;
 
-  constructor(private readonly config: KafkaConsumerConfig) {
-    const kafkaConfig: KafkaConfig = {
-      clientId: this.config.clientId,
-      brokers: this.config.brokers,
-      retry: this.config.retry || {
-        retries: 5,
-        initialRetryTime: 300,
-        multiplier: 2,
-        maxRetryTime: 30000,
-      },
-    };
-
-    this.kafka = new Kafka(kafkaConfig);
+  constructor(
+    private readonly configService: ConfigService,
+    @Inject(QueueInjectionTokens.REPLY_TOPIC_HANDLER)
+    private readonly replyTopicHandler: ReplyTopicHandler,
+    @Inject(QueueInjectionTokens.TASK_NOTIFICATION_HANDLER)
+    private readonly notificationHandler: ConsumerHandler,
+    @Inject(QueueInjectionTokens.KAFKA_CONSUMER_REGISTRY)
+    private readonly kafkaConsumerRegistry: KafkaConsumerRegistry
+  ) {
+    this.config = getKafkaConsumerConfig(configService);
+    this.kafka = new Kafka(this.config);
     this.consumer = this.kafka.consumer({
       groupId: this.config.groupId,
       sessionTimeout: this.config.sessionTimeout || 30000,
@@ -36,11 +41,14 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
       await this.consumer.connect();
       this.isConnected = true;
 
-      // Subscribe to all configured topics
       for (const topic of this.config.topics) {
         await this.consumer.subscribe({ topic, fromBeginning: false });
       }
 
+      for (const [key, handler] of this.kafkaConsumerRegistry.KAFKA_TOPICS_HANDLERS) {
+        this.registerHandler(key, handler);
+      }
+      
       await this.startConsuming();
       this.logger.log(`Kafka consumer connected and subscribed to topics: ${this.config.topics.join(', ')}`);
     } catch (error) {

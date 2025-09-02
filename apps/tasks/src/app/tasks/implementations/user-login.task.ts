@@ -1,5 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { AbstractTask, TaskPayload } from '../abstracts/abstract.task';
+import axios from 'axios';
+import { KafkaTopics } from '@message-system/queue';
 
 export interface UserLoginPayload extends TaskPayload {
   userId: string;
@@ -19,9 +21,20 @@ export class UserLoginTask extends AbstractTask {
     console.log('Executing user login task', {
       userId: payload.userId,
       email: payload.email,
-      loginTime: payload.loginTime,
-      ipAddress: payload.ipAddress
+      // loginTime: payload.loginTime,
+      // ipAddress: payload.ipAddress
     });
+
+    const result = await axios.post(`http://localhost:3001/api/kafka/send/${KafkaTopics.USER_LOGIN}`, {
+      userId: payload.userId,
+      email: payload.email,
+      loginTime: payload.loginTime,
+      ipAddress: payload.ipAddress,
+      userAgent: payload.userAgent
+    });
+
+    console.log(result);
+
 
     // Implement user login specific logic here
     // For example: update last login time, log security events, etc.

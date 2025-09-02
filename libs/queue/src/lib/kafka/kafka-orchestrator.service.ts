@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { KafkaConsumerService } from './consumer/kafka-consumer.service';
 import { KafkaProducerService } from './producer/kafka-producer.service';
@@ -7,22 +7,26 @@ import { ReplyTopicHandler } from './handlers/reply-topic.handler';
 import { TaskNotificationHandler } from './handlers/task-notification.handler';
 import { SSENotificationService } from '../sse/sse-notification.service';
 import { KafkaTopics } from '../constants/kafka.constants';
+import { QueueInjectionTokens } from '../constants/injection-tokens';
 
 @Injectable()
 export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
   private readonly logger = new Logger(KafkaOrchestrator.name);
-  private consumerService: KafkaConsumerService;
-  private producerService: KafkaProducerService;
 
   constructor(
     private readonly configService: ConfigService,
+    @Inject(QueueInjectionTokens.KAFKA_PENDING_REQUESTS_SERVICE)
     private readonly pendingRequestsService: KafkaPendingRequestsService,
-    private readonly sseNotificationService: SSENotificationService
+    @Inject(QueueInjectionTokens.SSE_NOTIFICATION_SERVICE)
+    private readonly sseNotificationService: SSENotificationService,
+    @Inject(QueueInjectionTokens.KAFKA_CONSUMER_SERVICE)
+    private readonly consumerService: KafkaConsumerService,
+    @Inject(QueueInjectionTokens.KAFKA_PRODUCER_SERVICE)
+    private readonly producerService: KafkaProducerService,
   ) {}
 
   async onModuleInit(): Promise<void> {
     try {
-      await this.initializeServices();
       await this.registerHandlers();
       this.logger.log('Kafka orchestrator initialized successfully');
     } catch (error) {
@@ -41,51 +45,6 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
     }
   }
 
-  private async initializeServices(): Promise<void> {
-    const brokers = this.getBrokers();
-    const clientId = this.getClientId();
-    const groupId = this.getGroupId();
-
-    // Initialize consumer
-    this.consumerService = new KafkaConsumerService({
-      clientId: `${clientId}-consumer`,
-      groupId,
-      brokers,
-      topics: [
-        'reply-topic',
-        KafkaTopics.USER_LOGIN,
-        KafkaTopics.PURCHASED,
-        KafkaTopics.MESSAGE_SENT,
-        KafkaTopics.ALERT_TRIGGERED,
-      ],
-      sessionTimeout: 30000,
-      heartbeatInterval: 3000,
-      rebalanceTimeout: 60000,
-      retry: {
-        retries: 5,
-        initialRetryTime: 300,
-        multiplier: 2,
-        maxRetryTime: 30000,
-      },
-    });
-
-    // Initialize producer
-    this.producerService = new KafkaProducerService({
-      clientId: `${clientId}-producer`,
-      brokers,
-      maxInFlightRequests: 5,
-      retry: {
-        retries: 5,
-        initialRetryTime: 300,
-        multiplier: 2,
-        maxRetryTime: 30000,
-      },
-    });
-
-    await this.consumerService.onModuleInit();
-    await this.producerService.onModuleInit();
-  }
-
   private async registerHandlers(): Promise<void> {
     // Register reply topic handler for pending requests
     const replyHandler = new ReplyTopicHandler(this.pendingRequestsService);
@@ -101,21 +60,7 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
 
     this.logger.log('All Kafka handlers registered successfully');
   }
-
-  private getBrokers(): string[] {
-    const brokersStr = this.configService.get<string>('KAFKA_BROKERS', 'localhost:9092');
-    return brokersStr.split(',').map(broker => broker.trim());
-  }
-
-  private getClientId(): string {
-    return this.configService.get<string>('KAFKA_CLIENT_ID', 'message-system-service');
-  }
-
-  private getGroupId(): string {
-    return this.configService.get<string>('KAFKA_GROUP_ID', 'message-system-group');
-  }
-
-  // Public methods for sending messages
+  
   async sendMessage(topic: string, message: {
     key?: string;
     value: unknown;
