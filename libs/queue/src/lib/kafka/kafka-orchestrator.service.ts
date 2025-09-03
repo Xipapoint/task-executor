@@ -27,7 +27,6 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
 
   async onModuleInit(): Promise<void> {
     try {
-      await this.registerHandlers();
       this.logger.log('Kafka orchestrator initialized successfully');
     } catch (error) {
       this.logger.error('Failed to initialize Kafka orchestrator', error);
@@ -43,22 +42,6 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
     } catch (error) {
       this.logger.error('Error during Kafka orchestrator destruction', error);
     }
-  }
-
-  private async registerHandlers(): Promise<void> {
-    // Register reply topic handler for pending requests
-    const replyHandler = new ReplyTopicHandler(this.pendingRequestsService);
-    this.consumerService.registerHandler('reply-topic', replyHandler);
-
-    // Register notification handlers for each topic
-    const notificationHandler = new TaskNotificationHandler(this.sseNotificationService);
-    
-    this.consumerService.registerHandler(KafkaTopics.USER_LOGIN, notificationHandler);
-    this.consumerService.registerHandler(KafkaTopics.PURCHASED, notificationHandler);
-    this.consumerService.registerHandler(KafkaTopics.MESSAGE_SENT, notificationHandler);
-    this.consumerService.registerHandler(KafkaTopics.ALERT_TRIGGERED, notificationHandler);
-
-    this.logger.log('All Kafka handlers registered successfully');
   }
   
   async sendMessage(topic: string, message: {

@@ -36,6 +36,15 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
+
+  // TODO: 
+
+  // REFACTOR THIS FUCKING PIECE OF SHIT. FUCKING COPILOT MADE BULLSHIT.
+  // SEPERATE DIFFERENTLY. TOPICS: MESSAGING, METRICS. PARTITIONS: USER_LOGIN, PURCHASED, MESSAGE_SENT, ALERT_TRIGGERED
+  // 
+
+  // TODO:
+
   async onModuleInit(): Promise<void> {
     try {
       await this.consumer.connect();
