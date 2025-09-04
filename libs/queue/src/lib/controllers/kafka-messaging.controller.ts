@@ -7,6 +7,7 @@ import { SSENotificationService, SSEMessage } from '../sse/sse-notification.serv
 import { randomUUID } from 'crypto';
 import { KafkaTopics } from '../constants';
 import { QueueInjectionTokens } from '../constants/injection-tokens';
+import { BaseTaskContract } from '../contracts/request/base-task.contract';
 
 @ApiTags('kafka-messaging')
 @Controller('kafka')
@@ -56,10 +57,10 @@ export class KafkaMessagingController {
   @ApiResponse({ status: 201, description: 'Message sent successfully' })
   @ApiResponse({ status: 400, description: 'Invalid request' })
   async sendMessage(
-    @Param('topic') topic: string,
+    @Param('topic') topic: keyof typeof KafkaTopics,
     @Body() body: {
       key?: string;
-      value: unknown;
+      value: BaseTaskContract;
       headers?: Record<string, string>;
     }
   ) {
@@ -308,60 +309,60 @@ export class KafkaMessagingController {
     };
   }
 
-  // Convenience methods for common task types
-  @Post('tasks/user-login')
-  @ApiOperation({ summary: 'Send user login task' })
-  @ApiBody({
-    description: 'User login data',
-    schema: {
-      type: 'object',
-      properties: {
-        userId: { type: 'string' },
-        email: { type: 'string' },
-        loginTime: { type: 'string' },
-        ipAddress: { type: 'string' },
-        userAgent: { type: 'string' }
-      },
-      required: ['userId', 'email', 'loginTime', 'ipAddress']
-    }
-  })
-  async sendUserLoginTask(@Body() data: {
-    userId: string;
-    email: string;
-    loginTime: string;
-    ipAddress: string;
-    userAgent?: string;
-  }) {
-    return this.sendMessage(KafkaTopics.USER_LOGIN, { value: data });
-  }
+  // // Convenience methods for common task types
+  // @Post('tasks/user-login')
+  // @ApiOperation({ summary: 'Send user login task' })
+  // @ApiBody({
+  //   description: 'User login data',
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       userId: { type: 'string' },
+  //       email: { type: 'string' },
+  //       loginTime: { type: 'string' },
+  //       ipAddress: { type: 'string' },
+  //       userAgent: { type: 'string' }
+  //     },
+  //     required: ['userId', 'email', 'loginTime', 'ipAddress']
+  //   }
+  // })
+  // async sendUserLoginTask(@Body() data: {
+  //   userId: string;
+  //   email: string;
+  //   loginTime: string;
+  //   ipAddress: string;
+  //   userAgent?: string;
+  // }) {
+  //   return this.sendMessage(KafkaTopics.USER_LOGIN, { value: data });
+  // }
 
-  @Post('tasks/purchase')
-  @ApiOperation({ summary: 'Send purchase task' })
-  @ApiBody({
-    description: 'Purchase data',
-    schema: {
-      type: 'object',
-      properties: {
-        userId: { type: 'string' },
-        orderId: { type: 'string' },
-        productId: { type: 'string' },
-        amount: { type: 'number' },
-        currency: { type: 'string' },
-        purchaseTime: { type: 'string' },
-        paymentMethod: { type: 'string' }
-      },
-      required: ['userId', 'orderId', 'productId', 'amount', 'currency', 'purchaseTime', 'paymentMethod']
-    }
-  })
-  async sendPurchaseTask(@Body() data: {
-    userId: string;
-    orderId: string;
-    productId: string;
-    amount: number;
-    currency: string;
-    purchaseTime: string;
-    paymentMethod: string;
-  }) {
-    return this.sendMessage(KafkaTopics.PURCHASED, { value: data });
-  }
+  // @Post('tasks/purchase')
+  // @ApiOperation({ summary: 'Send purchase task' })
+  // @ApiBody({
+  //   description: 'Purchase data',
+  //   schema: {
+  //     type: 'object',
+  //     properties: {
+  //       userId: { type: 'string' },
+  //       orderId: { type: 'string' },
+  //       productId: { type: 'string' },
+  //       amount: { type: 'number' },
+  //       currency: { type: 'string' },
+  //       purchaseTime: { type: 'string' },
+  //       paymentMethod: { type: 'string' }
+  //     },
+  //     required: ['userId', 'orderId', 'productId', 'amount', 'currency', 'purchaseTime', 'paymentMethod']
+  //   }
+  // })
+  // async sendPurchaseTask(@Body() data: {
+  //   userId: string;
+  //   orderId: string;
+  //   productId: string;
+  //   amount: number;
+  //   currency: string;
+  //   purchaseTime: string;
+  //   paymentMethod: string;
+  // }) {
+  //   return this.sendMessage(KafkaTopics.PURCHASED, { value: data });
+  // }
 }

@@ -14,10 +14,8 @@ export class KafkaConsumerRegistry {
   ) {}
 
   public readonly KAFKA_TOPICS_HANDLERS: Map<KafkaTopics, ConsumerHandler> = new Map([
-    [KafkaTopics.USER_LOGIN, this.taskNotificationHandler],
-    [KafkaTopics.PURCHASED, this.taskNotificationHandler],
-    [KafkaTopics.MESSAGE_SENT, this.taskNotificationHandler],
-    [KafkaTopics.ALERT_TRIGGERED, this.taskNotificationHandler],
     [KafkaTopics.REPLY_TOPIC, this.replyTopicHandler],
+    [KafkaTopics.LOGGING, this.taskNotificationHandler],
+    [KafkaTopics.METRICS, this.taskNotificationHandler],
   ]);
 }

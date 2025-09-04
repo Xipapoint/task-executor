@@ -8,6 +8,7 @@ import { TaskNotificationHandler } from './handlers/task-notification.handler';
 import { SSENotificationService } from '../sse/sse-notification.service';
 import { KafkaTopics } from '../constants/kafka.constants';
 import { QueueInjectionTokens } from '../constants/injection-tokens';
+import { BaseTaskContract } from '../contracts/request/base-task.contract';
 
 @Injectable()
 export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
@@ -46,7 +47,7 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
   
   async sendMessage(topic: string, message: {
     key?: string;
-    value: unknown;
+    value: BaseTaskContract;
     headers?: Record<string, string | Buffer>;
   }): Promise<void> {
     const serializedMessage = {

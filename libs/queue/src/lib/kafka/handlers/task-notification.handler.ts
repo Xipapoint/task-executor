@@ -46,7 +46,6 @@ export class TaskNotificationHandler implements ConsumerHandler {
     const timestamp = new Date().toISOString();
     const baseMessage = {
       id: `${topic}-${Date.now()}`,
-      event: 'task_update',
       data: {
         topic,
         timestamp,
