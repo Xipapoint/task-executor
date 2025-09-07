@@ -1,14 +1,11 @@
-import { Injectable, Logger, OnModuleInit, OnModuleDestroy, Inject } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { KafkaConsumerService } from './consumer/kafka-consumer.service';
-import { KafkaProducerService } from './producer/kafka-producer.service';
-import { KafkaPendingRequestsService } from './pending-requests/kafka-pending-requests.service';
-import { ReplyTopicHandler } from './handlers/reply-topic.handler';
-import { TaskNotificationHandler } from './handlers/task-notification.handler';
-import { SSENotificationService } from '../sse/sse-notification.service';
-import { KafkaTopics } from '../constants/kafka.constants';
 import { QueueInjectionTokens } from '../constants/injection-tokens';
 import { BaseTaskContract } from '../contracts/request/base-task.contract';
+import { SSENotificationService } from '../sse/sse-notification.service';
+import { KafkaConsumerService } from './consumer/kafka-consumer.service';
+import { KafkaPendingRequestsService } from './pending-requests/kafka-pending-requests.service';
+import { KafkaProducerService } from './producer/kafka-producer.service';
 
 @Injectable()
 export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {

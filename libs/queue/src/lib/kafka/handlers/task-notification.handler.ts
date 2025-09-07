@@ -4,6 +4,30 @@ import { SSENotificationService, SSEMessage } from '../../sse/sse-notification.s
 import { KafkaTopics } from '../../constants/kafka.constants';
 import { QueueInjectionTokens } from '../../constants/injection-tokens';
 
+const RETURN_MESSAGES: Record<KafkaTopics, (payload: unknown, type: string) => SSEMessage | null> = {
+  [KafkaTopics.LOGGING]: (payload: unknown, type: string) => ({
+    id: `user-login-${Date.now()}`,
+    data: {
+      topic: KafkaTopics.LOGGING,
+      timestamp: new Date().toISOString(),
+      payload,
+      type
+    }
+  }),
+  [KafkaTopics.METRICS]: (payload: unknown, type: string) => ({
+    id: `metrics-${Date.now()}`,
+    data: {
+      topic: KafkaTopics.METRICS,
+      timestamp: new Date().toISOString(),
+      payload,
+      type
+    }
+  }),
+  [KafkaTopics.REPLY_TOPIC]: function (payload: unknown, type: string): SSEMessage | null {
+    throw new Error('Function not implemented.');
+  }
+}
+
 @Injectable()
 export class TaskNotificationHandler implements ConsumerHandler {
   private readonly logger = new Logger(TaskNotificationHandler.name);
@@ -17,7 +41,6 @@ export class TaskNotificationHandler implements ConsumerHandler {
     try {
       const { topic, value } = message;
       
-      // Create notification message based on topic
       const notificationMessage = this.createNotificationMessage(topic, value);
       
       if (!notificationMessage) {
@@ -25,10 +48,8 @@ export class TaskNotificationHandler implements ConsumerHandler {
         return;
       }
 
-      // Determine the appropriate channel for broadcasting
       const channel = this.getChannelForTopic(topic);
       
-      // Broadcast to all subscribed SSE clients
       this.sseService.broadcast(channel, notificationMessage);
       
       this.logger.debug(`Notification sent for topic ${topic} on channel ${channel}`);
@@ -38,94 +59,29 @@ export class TaskNotificationHandler implements ConsumerHandler {
         offset: message.offset,
         partition: message.partition
       });
-      // Don't throw error to avoid affecting other message processing
     }
   }
 
   private createNotificationMessage(topic: string, payload: unknown): SSEMessage | null {
-    const timestamp = new Date().toISOString();
-    const baseMessage = {
-      id: `${topic}-${Date.now()}`,
-      data: {
-        topic,
-        timestamp,
-        payload,
-      },
-    };
-
-    switch (topic) {
-      case KafkaTopics.USER_LOGIN:
-        return {
-          ...baseMessage,
-          event: 'user_login',
-          data: {
-            ...baseMessage.data,
-            type: 'authentication',
-            message: 'User login activity detected',
-          },
-        };
-
-      case KafkaTopics.PURCHASED:
-        return {
-          ...baseMessage,
-          event: 'purchase',
-          data: {
-            ...baseMessage.data,
-            type: 'transaction',
-            message: 'Purchase completed',
-          },
-        };
-
-      case KafkaTopics.MESSAGE_SENT:
-        return {
-          ...baseMessage,
-          event: 'message',
-          data: {
-            ...baseMessage.data,
-            type: 'communication',
-            message: 'Message sent',
-          },
-        };
-
-      case KafkaTopics.ALERT_TRIGGERED:
-        return {
-          ...baseMessage,
-          event: 'alert',
-          data: {
-            ...baseMessage.data,
-            type: 'alert',
-            message: 'Alert triggered',
-            priority: this.getAlertPriority(payload),
-          },
-        };
-
-      default:
-        return {
-          ...baseMessage,
-          event: 'task_generic',
-          data: {
-            ...baseMessage.data,
-            type: 'generic',
-            message: `Task update for ${topic}`,
-          },
-        };
-    }
+    return RETURN_MESSAGES[topic as KafkaTopics]
+      ? RETURN_MESSAGES[topic as KafkaTopics](payload, topic)
+      : (() => {
+          this.logger.warn(`No message handler for topic: ${topic}`);
+          return null;
+        })();
   }
 
   private getChannelForTopic(topic: string): string {
-    // Map topics to SSE channels
     const topicChannelMap: Record<string, string> = {
-      [KafkaTopics.USER_LOGIN]: 'auth',
-      [KafkaTopics.PURCHASED]: 'payments',
-      [KafkaTopics.MESSAGE_SENT]: 'messages',
-      [KafkaTopics.ALERT_TRIGGERED]: 'alerts',
+      [KafkaTopics.LOGGING]: 'logging',
+      [KafkaTopics.METRICS]: 'metrics',
+      [KafkaTopics.REPLY_TOPIC]: 'replies',
     };
 
     return topicChannelMap[topic] || 'general';
   }
 
   private getAlertPriority(payload: unknown): string {
-    // Extract priority from alert payload
     if (payload && typeof payload === 'object' && 'severity' in payload) {
       const alertPayload = payload as { severity?: string };
       return alertPayload.severity || 'medium';
