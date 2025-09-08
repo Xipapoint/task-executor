@@ -1,33 +1,8 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { ConsumerHandler, KafkaMessage } from '../interfaces/kafka-consumer.interface';
 import { SSENotificationService, SSEMessage } from '../../sse/sse-notification.service';
-import { KafkaTopics } from '../../constants/kafka.constants';
+import { KafkaTopics, RETURN_MESSAGES } from '../../constants/kafka.constants';
 import { QueueInjectionTokens } from '../../constants/injection-tokens';
-
-const RETURN_MESSAGES: Record<KafkaTopics, (payload: unknown, type: string) => SSEMessage | null> = {
-  [KafkaTopics.LOGGING]: (payload: unknown, type: string) => ({
-    id: `user-login-${Date.now()}`,
-    data: {
-      topic: KafkaTopics.LOGGING,
-      timestamp: new Date().toISOString(),
-      payload,
-      type
-    }
-  }),
-  [KafkaTopics.METRICS]: (payload: unknown, type: string) => ({
-    id: `metrics-${Date.now()}`,
-    data: {
-      topic: KafkaTopics.METRICS,
-      timestamp: new Date().toISOString(),
-      payload,
-      type
-    }
-  }),
-  [KafkaTopics.REPLY_TOPIC]: function (payload: unknown, type: string): SSEMessage | null {
-    throw new Error('Function not implemented.');
-  }
-}
-
 @Injectable()
 export class TaskNotificationHandler implements ConsumerHandler {
   private readonly logger = new Logger(TaskNotificationHandler.name);

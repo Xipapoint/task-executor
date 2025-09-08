@@ -57,11 +57,7 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
 
   async sendRequest<T>(
     topic: string,
-    request: {
-      key?: string;
-      value: unknown;
-      headers?: Record<string, string | Buffer>;
-    },
+    request: BaseTaskContract,
     timeoutMs = 30000
   ): Promise<T> {
     const requestId = this.generateRequestId();
@@ -70,7 +66,7 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
     const messageWithId = {
       ...request,
       value: {
-        ...(typeof request.value === 'object' ? request.value : { data: request.value }),
+        ...request.value,
         id: requestId,
       },
       headers: {

@@ -1,12 +1,13 @@
-import { Injectable, Logger, OnModuleDestroy, OnModuleInit, Inject } from '@nestjs/common';
+import { Inject, Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { Consumer, Kafka } from 'kafkajs';
+import { QueueInjectionTokens } from '../../constants/injection-tokens';
+import { PartitionContractMap } from '../../constants/kafka.constants';
+import { BaseTaskContract } from '../../contracts/request/base-task.contract';
+import { ReplyTopicHandler } from '../handlers/reply-topic.handler';
 import { ConsumerHandler, KafkaConsumerConfig, KafkaMessage } from '../interfaces';
 import { getKafkaConsumerConfig } from '../utils';
-import { ReplyTopicHandler } from '../handlers/reply-topic.handler';
-import { KafkaTopics } from '../../constants';
 import { KafkaConsumerRegistry } from './kafka-consumer-registry';
-import { QueueInjectionTokens } from '../../constants/injection-tokens';
 
 @Injectable()
 export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
@@ -36,12 +37,11 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     });
   }
 
-
-  // TODO: 
+  // TODO:
 
   // REFACTOR THIS FUCKING PIECE OF SHIT. FUCKING COPILOT MADE BULLSHIT.
   // SEPERATE DIFFERENTLY. TOPICS: MESSAGING, METRICS. PARTITIONS: USER_LOGIN, PURCHASED, MESSAGE_SENT, ALERT_TRIGGERED
-  // 
+  //
 
   // TODO:
 
@@ -54,12 +54,17 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
         await this.consumer.subscribe({ topic, fromBeginning: false });
       }
 
-      for (const [key, handler] of this.kafkaConsumerRegistry.KAFKA_TOPICS_HANDLERS) {
+      for (const [key, handler] of this.kafkaConsumerRegistry
+        .KAFKA_TOPICS_HANDLERS) {
         this.registerHandler(key, handler);
       }
-      
+
       await this.startConsuming();
-      this.logger.log(`Kafka consumer connected and subscribed to topics: ${this.config.topics.join(', ')}`);
+      this.logger.log(
+        `Kafka consumer connected and subscribed to topics: ${this.config.topics.join(
+          ', '
+        )}`
+      );
     } catch (error) {
       this.logger.error('Failed to initialize Kafka consumer', error);
       throw error;
@@ -88,18 +93,26 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
             return;
           }
 
-          const kafkaMessage: KafkaMessage = {
+          const stringKey = message.key?.toString(
+            'utf8'
+          ) as keyof PartitionContractMap;
+
+          type KeyType = typeof stringKey;
+
+          const kafkaMessage: KafkaMessage<PartitionContractMap[KeyType]> = {
             topic,
             partition,
             offset: message.offset,
-            key: message.key,
+            key: stringKey,
             value: this.parseMessageValue(message.value),
             timestamp: message.timestamp,
             headers: this.parseHeaders(message.headers),
           };
 
           await handler.handle(kafkaMessage);
-          this.logger.debug(`Successfully processed message from topic ${topic}, offset ${message.offset}`);
+          this.logger.debug(
+            `Successfully processed message from topic ${topic}, offset ${message.offset}`
+          );
         } catch (error) {
           this.logger.error(
             `Error processing message from topic ${topic}, partition ${partition}, offset ${message.offset}`,
@@ -128,21 +141,19 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     this.logger.log(`Handler unregistered for topic: ${topic}`);
   }
 
-  private parseMessageValue(value: Buffer | null): unknown {
+  private parseMessageValue<T extends BaseTaskContract>(
+    value: Buffer | null
+  ): T | null {
     if (!value) {
       return null;
     }
-
-    try {
-      const stringValue = value.toString('utf8');
-      return JSON.parse(stringValue);
-    } catch {
-      // If it's not JSON, return as string
-      return value.toString('utf8');
-    }
+    const stringValue = value.toString('utf8');
+    return JSON.parse(stringValue);
   }
 
-  private parseHeaders(headers: unknown): Record<string, string | Buffer> | undefined {
+  private parseHeaders(
+    headers: unknown
+  ): Record<string, string | Buffer> | undefined {
     if (!headers) {
       return undefined;
     }
@@ -198,7 +209,9 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
 
     try {
       await this.consumer.commitOffsets(topicPartitions);
-      this.logger.debug(`Committed offsets for ${topicPartitions.length} topic-partitions`);
+      this.logger.debug(
+        `Committed offsets for ${topicPartitions.length} topic-partitions`
+      );
     } catch (error) {
       this.logger.error('Failed to commit offsets', error);
       throw error;
@@ -212,7 +225,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const topicPartitions = topics.map(topic => ({ topic }));
+      const topicPartitions = topics.map((topic) => ({ topic }));
       this.consumer.pause(topicPartitions);
       this.logger.log(`Paused consumption for topics: ${topics.join(', ')}`);
     } catch (error) {
@@ -228,7 +241,7 @@ export class KafkaConsumerService implements OnModuleInit, OnModuleDestroy {
     }
 
     try {
-      const topicPartitions = topics.map(topic => ({ topic }));
+      const topicPartitions = topics.map((topic) => ({ topic }));
       this.consumer.resume(topicPartitions);
       this.logger.log(`Resumed consumption for topics: ${topics.join(', ')}`);
     } catch (error) {

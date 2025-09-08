@@ -1,6 +1,8 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { RedisClient } from '@message-system/cache';
 import { PendingRequest } from '../interfaces/kafka-consumer.interface';
+import Redis from 'ioredis';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class KafkaPendingRequestsService implements OnModuleInit, OnModuleDestroy {
@@ -10,9 +12,12 @@ export class KafkaPendingRequestsService implements OnModuleInit, OnModuleDestro
   private readonly REQUEST_TTL = 300; // 5 minutes
   
   private localPendingRequests = new Map<string, PendingRequest>();
-  private replySubscriber: any;
+  private replySubscriber: Redis;
 
-  constructor(private readonly redisClient: RedisClient) {}
+  constructor(
+    private readonly redisClient: RedisClient,
+    private readonly configService: ConfigService
+  ) {}
 
   async onModuleInit(): Promise<void> {
     await this.setupReplySubscription();
@@ -101,7 +106,7 @@ export class KafkaPendingRequestsService implements OnModuleInit, OnModuleDestro
         JSON.stringify({
           requestId,
           timestamp: pendingRequest.timestamp,
-          podId: process.env.HOSTNAME || 'unknown',
+          podId: this.configService.get('HOSTNAME', 'unknown'),
         }),
         this.REQUEST_TTL
       );
@@ -181,15 +186,15 @@ export class KafkaPendingRequestsService implements OnModuleInit, OnModuleDestro
     resolve: (value: unknown) => void;
     reject: (error: Error) => void;
   } {
-    let resolve: (value: unknown) => void;
-    let reject: (error: Error) => void;
+    let resolve: (value: unknown) => void = () => {};
+    let reject: (error: Error) => void = () => {};
 
     const promise = new Promise<unknown>((res, rej) => {
       resolve = res;
       reject = rej;
     });
 
-    return { promise, resolve: resolve!, reject: reject! };
+    return { promise, resolve, reject };
   }
 
   // Get metrics for monitoring

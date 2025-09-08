@@ -20,7 +20,6 @@ export class MetricsInterceptor implements NestInterceptor {
   ) {}
 
   intercept(context: ExecutionContext, next: CallHandler) {
-    console.log('MetricsInterceptor activated');
     const now = Date.now();
 
     const request: Request = context.switchToHttp().getRequest();

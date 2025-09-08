@@ -12,7 +12,7 @@ export * from './lib/kafka/handlers/reply-topic.handler';
 export * from './lib/kafka/handlers/task-notification.handler';
 
 // Export interfaces
-export * from './lib/kafka/interfaces/kafka-consumer.interface';
+export * from './lib/kafka/interfaces';
 export * from './lib/interfaces/metrics.interface';
 
 // Export health and monitoring

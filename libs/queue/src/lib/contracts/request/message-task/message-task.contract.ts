@@ -1,4 +1,3 @@
-import { TaskContractWithStartTime } from '../task/task.contract';
-export interface MessageTaskContract extends TaskContractWithStartTime {
-    message: string
-}
+import { BaseTaskContract } from '../base-task.contract';
+import { MessageTaskValue } from '../../../interfaces';
+export type MessageTaskContract = BaseTaskContract<MessageTaskValue>;

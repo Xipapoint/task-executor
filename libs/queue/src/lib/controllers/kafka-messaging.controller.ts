@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Param, Query, Res, Req, Sse, Logger, Inject } from '@nestjs/common';
+import { Controller, Get, Post, Body, Param, Query, Res, Req, Sse, Logger, Inject, UseInterceptors } from '@nestjs/common';
 import { Response, Request } from 'express';
 import { Observable } from 'rxjs';
 import { ApiTags, ApiOperation, ApiResponse, ApiParam, ApiQuery, ApiBody } from '@nestjs/swagger';
@@ -8,9 +8,11 @@ import { randomUUID } from 'crypto';
 import { KafkaTopics } from '../constants';
 import { QueueInjectionTokens } from '../constants/injection-tokens';
 import { BaseTaskContract } from '../contracts/request/base-task.contract';
+import { MetricsInterceptor } from '@message-system/nestjs';
 
 @ApiTags('kafka-messaging')
 @Controller('kafka')
+@UseInterceptors(MetricsInterceptor)
 export class KafkaMessagingController {
   private readonly logger = new Logger(KafkaMessagingController.name);
 
@@ -110,11 +112,7 @@ export class KafkaMessagingController {
   async sendRequest(
     @Param('topic') topic: string,
     @Query('timeout') timeout = 30000,
-    @Body() body: {
-      key?: string;
-      value: unknown;
-      headers?: Record<string, string>;
-    }
+    @Body() body: BaseTaskContract
   ) {
     try {
       const response = await this.kafkaOrchestrator.sendRequest(

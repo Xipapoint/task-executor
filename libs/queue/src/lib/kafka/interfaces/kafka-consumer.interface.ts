@@ -14,12 +14,12 @@ export interface KafkaConsumerConfig {
   };
 }
 
-export interface KafkaMessage<T = unknown> {
+export interface KafkaMessage<T = MessageTas> {
   topic: string;
   partition: number;
   offset: string;
-  key?: string | Buffer | null;
-  value: T;
+  key: string;
+  value: T | null;
   timestamp: string;
   headers?: Record<string, string | Buffer>;
 }
