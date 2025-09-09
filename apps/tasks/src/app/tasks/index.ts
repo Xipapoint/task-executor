@@ -11,4 +11,12 @@ export * from './implementations/alert-triggered.task';
 export * from './factories/task.factory';
 export * from './services/task.service';
 export * from './controllers/task.controller';
+
+// Repository and entities
+export * from './repository/executed-task.repository';
+export * from './entities/executed-task.entity';
+
+// Enums
+export * from './enum/TASK_EXECTION_STATUS';
+
 export * from './task.module';

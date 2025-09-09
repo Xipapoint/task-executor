@@ -13,7 +13,7 @@ export * from './lib/kafka/handlers/task-notification.handler';
 
 // Export interfaces
 export * from './lib/kafka/interfaces';
-export * from './lib/interfaces/metrics.interface';
+export * from './lib/interfaces';
 
 // Export health and monitoring
 export * from './lib/health/kafka-health.service';

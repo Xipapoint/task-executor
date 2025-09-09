@@ -42,11 +42,7 @@ export class KafkaOrchestrator implements OnModuleInit, OnModuleDestroy {
     }
   }
   
-  async sendMessage(topic: string, message: {
-    key?: string;
-    value: BaseTaskContract;
-    headers?: Record<string, string | Buffer>;
-  }): Promise<void> {
+  async sendMessage(topic: string, message: BaseTaskContract): Promise<void> {
     const serializedMessage = {
       ...message,
       value: typeof message.value === 'string' ? message.value : JSON.stringify(message.value),
